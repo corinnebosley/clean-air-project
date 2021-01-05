@@ -1,5 +1,6 @@
 import os
 
+import pytest
 import numpy as np
 import iris
 import shapely, shapely.geometry
@@ -7,15 +8,13 @@ import shapely, shapely.geometry
 from clean_air.data import DataSubset
 from clean_air import util
 
-SAMPLEDIR = os.path.expanduser("~cbosley/Projects/toybox/cap_sample_data")
 
-
-def test_point_subset():
+def test_point_subset(sampledir):
     # Create example dataset
     ds = DataSubset(
         None,
         "aqum",
-        os.path.join(SAMPLEDIR, "model", "aqum_daily*"),
+        os.path.join(sampledir, "model_full", "aqum_daily*"),
         point=(100, 200),
     )
     cube = ds.as_cube()
@@ -27,12 +26,12 @@ def test_point_subset():
     assert iris.util.array_equal(ycoord.points, [200])
 
 
-def test_box_subset():
+def test_box_subset(sampledir):
     # Create example dataset
     ds = DataSubset(
         None,
         "aqum",
-        os.path.join(SAMPLEDIR, "model", "aqum_daily*"),
+        os.path.join(sampledir, "model_full", "aqum_daily*"),
         box=(-1000, -2000, 3000, 4000),
     )
     cube = ds.as_cube()
@@ -46,7 +45,9 @@ def test_box_subset():
 
 
 class TestPolygonSubset:
-    def setup_class(self):
+    @staticmethod
+    @pytest.fixture(scope="class")
+    def polygon_cube(sampledir):
         # Define a test polygon (an extremely simple representation of Exeter)
         shape = shapely.geometry.Polygon([
             (289271.9, 93197.0),
@@ -59,15 +60,15 @@ class TestPolygonSubset:
         ])
 
         # Create example dataset
-        self.ds = DataSubset(
+        ds = DataSubset(
             None,
             "aqum",
-            os.path.join(SAMPLEDIR, "model", "aqum_hourly_o3_20200520.nc"),
+            os.path.join(sampledir, "model_full", "aqum_hourly_o3_20200520.nc"),
             shape=shape,
         )
-        self.cube = self.ds.as_cube()
+        return ds.as_cube()
 
-    def test_subset_mask(self):
+    def test_subset_mask(self, polygon_cube):
         # Define corresponding mask (note: this "looks" upside down compared
         # to how it would be plotted)
         expected_mask = np.array(
@@ -80,10 +81,10 @@ class TestPolygonSubset:
         )
 
         # Check we have the right mask (on a 2d slice of this 3d cube)
-        subcube = next(self.cube.slices_over("time"))
+        subcube = next(polygon_cube.slices_over("time"))
         assert iris.util.array_equal(subcube.data.mask, expected_mask)
 
-    def test_subset_data(self):
+    def test_subset_data(self, polygon_cube):
         # Simple data check, which, as the mask is taken into account, should
         # be a pretty reliable test
-        assert round(self.cube.data.mean(), 8) == 57.66388811
+        assert round(polygon_cube.data.mean(), 8) == 57.66388811

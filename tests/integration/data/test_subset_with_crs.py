@@ -1,5 +1,6 @@
 import os
 
+import pytest
 import numpy as np
 import iris
 import shapely, shapely.geometry
@@ -8,15 +9,13 @@ import cartopy.crs as ccrs
 from clean_air.data import DataSubset
 from clean_air import util
 
-SAMPLEDIR = os.path.expanduser("~cbosley/Projects/toybox/cap_sample_data")
 
-
-def test_latlon_point():
+def test_latlon_point(sampledir):
     # Create example dataset
     ds = DataSubset(
         None,
         "aqum",
-        os.path.join(SAMPLEDIR, "model", "aqum_daily*"),
+        os.path.join(sampledir, "model_full", "aqum_daily*"),
         point=(-0.1, 51.5),
         crs=ccrs.Geodetic(),
     )
@@ -29,12 +28,12 @@ def test_latlon_point():
     assert iris.util.array_equal(ycoord.points.round(4), [179660.9048])
 
 
-def test_latlon_box():
+def test_latlon_box(sampledir):
     # Create example dataset
     ds = DataSubset(
         None,
         "aqum",
-        os.path.join(SAMPLEDIR, "model", "aqum_daily*"),
+        os.path.join(sampledir, "model_full", "aqum_daily*"),
         box=(-4, 50.4, -2.8, 51.2),
         crs=ccrs.Geodetic(),
     )
@@ -58,7 +57,10 @@ def test_latlon_box():
 
 class TestLatlonPolygonSubset:
     # This is literally a copy of the unit test, with converted coordinates
-    def setup_class(self):
+
+    @staticmethod
+    @pytest.fixture(scope="class")
+    def polygon_cube(sampledir):
         # Define a test polygon (an extremely simple representation of Exeter)
         shape = shapely.geometry.Polygon([
             (-3.5690, 50.7273),
@@ -71,16 +73,16 @@ class TestLatlonPolygonSubset:
         ])
 
         # Create example dataset
-        self.ds = DataSubset(
+        ds = DataSubset(
             None,
             "aqum",
-            os.path.join(SAMPLEDIR, "model", "aqum_hourly_o3_20200520.nc"),
+            os.path.join(sampledir, "model_full", "aqum_hourly_o3_20200520.nc"),
             shape=shape,
             crs=ccrs.Geodetic(),
         )
-        self.cube = self.ds.as_cube()
+        return ds.as_cube()
 
-    def test_subset_mask(self):
+    def test_subset_mask(self, polygon_cube):
         # Define corresponding mask (note: this "looks" upside down compared
         # to how it would be plotted)
         expected_mask = np.array(
@@ -93,10 +95,10 @@ class TestLatlonPolygonSubset:
         )
 
         # Check we have the right mask (on a 2d slice of this 3d cube)
-        subcube = next(self.cube.slices_over("time"))
+        subcube = next(polygon_cube.slices_over("time"))
         assert iris.util.array_equal(subcube.data.mask, expected_mask)
 
-    def test_subset_data(self):
+    def test_subset_data(self, polygon_cube):
         # Simple data check, which, as the mask is taken into account, should
         # be a pretty reliable test
-        assert round(self.cube.data.mean(), 8) == 57.66388811
+        assert round(polygon_cube.data.mean(), 8) == 57.66388811
