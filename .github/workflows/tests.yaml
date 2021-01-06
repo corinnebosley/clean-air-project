@@ -1,0 +1,51 @@
+name: Run tests
+
+on:
+  # Run on any push
+  - push
+  # Run manually (from actions tab)
+  - workflow_dispatch
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          path: clean-air-project
+
+      - name: Check out data
+        uses: actions/checkout@v2
+        with:
+          repository: ADAQ-AQI/cap-sample-data
+          path: cap-sample-data
+
+      - name: Set up conda
+        run: eval "$(conda shell.bash hook 2> /dev/null)"
+
+      - name: Check cached environment
+        id: cache
+        uses: actions/cache@v2
+        with:
+          key: env-${{ hashFiles('clean-air-project/environment.yaml') }}
+          path: pyenv
+
+      - name: Create environment
+        # Only if not found in the cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: conda env create -p pyenv -f clean-air-project/environment.yaml
+
+      - name: Activate environment
+        run: conda activate pyenv
+
+  run:
+    runs-on: ubuntu-latest
+    needs: setup
+
+    steps:
+      - name: Run pytest
+        run: |
+          cd clean-air-project
+          pytest
