@@ -13,20 +13,18 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v2
-        with:
-          path: clean-air-project
 
       - name: Check out data
         uses: actions/checkout@v2
         with:
           repository: ADAQ-AQI/cap-sample-data
-          path: cap-sample-data
+          path: .sample-data
 
       - name: Check cached environment
         id: cache
         uses: actions/cache@v2
         with:
-          key: env-${{ hashFiles('clean-air-project/environment.yaml') }}
+          key: env-${{ hashFiles('environment.yaml') }}
           path: ./pyenv
 
       - name: Create environment
@@ -36,7 +34,7 @@ jobs:
         # we need to know the path anyway for caching purposes.  In fact, even
         # knowing that a named environment would go in $CONDA/envs/<name>,
         # the cache action fails to restore files there?
-        run: conda env create -p ./pyenv -f clean-air-project/environment.yaml
+        run: conda env create -p ./pyenv -f environment.yaml
 
       - name: Activate environment
         # This is tricky, because "steps" are somewhat isolated in a way
@@ -63,6 +61,4 @@ jobs:
             || :
 
       - name: Run pytest
-        run: |
-          cd clean-air-project
-          pytest
+        run: pytest --sampledir .sample-data
