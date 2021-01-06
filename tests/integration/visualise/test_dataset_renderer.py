@@ -2,15 +2,10 @@
 Integration tests for the test_dataset_renderer.py visualisations.
 """
 
-import clean_air.visualise.dataset_renderer as dr
 import os
 
-MODEL_DATA_PATH = ("/net/home/h06/cbosley/Projects/toybox/cap_sample_data/"
-                   "model/")
-OBS_DATA_PATH = ("/net/home/h06/cbosley/Projects/toybox/cap_sample_data/"
-                 "obs/")
-AIRCRAFT_DATA_PATH = ("/net/home/h06/cbosley/Projects/toybox/cap_sample_data/"
-                      "aircraft/")
+import clean_air.visualise.dataset_renderer as dr
+
 
 # NOTE: This test now also fails because geopandas cannot load netcdf and iris
 # cannot load csv.  We must write a netcdf/csv converter to reinstate all of
@@ -52,5 +47,3 @@ AIRCRAFT_DATA_PATH = ("/net/home/h06/cbosley/Projects/toybox/cap_sample_data/"
     #     # TODO: fix aircraft data
     #     img = dr.DatasetRenderer(self.aircraft_path)
     #     img.render()
-
-
