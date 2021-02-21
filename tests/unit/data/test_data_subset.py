@@ -36,8 +36,6 @@ class TestPointSubset:
     def test_as_cube(sampledir):
         # Create example dataset
         ds = DataSubset(
-            None,
-            "aqum",
             os.path.join(sampledir, "model_full", "aqum_daily*"),
             point=(100, 200),
         )
@@ -52,8 +50,6 @@ class TestPointSubset:
     def test_as_cube_latlon(sampledir):
         # Create example dataset
         ds = DataSubset(
-            None,
-            "aqum",
             os.path.join(sampledir, "model_full", "aqum_daily*"),
             point=(-0.1, 51.5),
             crs=ccrs.Geodetic(),
@@ -71,8 +67,6 @@ class TestBoxSubset:
     def test_as_cube(sampledir):
         # Create example dataset
         ds = DataSubset(
-            None,
-            "aqum",
             os.path.join(sampledir, "model_full", "aqum_daily*"),
             box=(-1000, -2000, 3000, 4000),
         )
@@ -88,8 +82,6 @@ class TestBoxSubset:
     def test_as_cube_latlon(sampledir):
         # Create example dataset
         ds = DataSubset(
-            None,
-            "aqum",
             os.path.join(sampledir, "model_full", "aqum_daily*"),
             box=(-4, 50.4, -2.8, 51.2),
             crs=ccrs.Geodetic(),
@@ -123,8 +115,6 @@ class TestPolygonSubset:
 
         # Create example dataset
         ds = DataSubset(
-            None,
-            "aqum",
             os.path.join(sampledir, "model_full", "aqum_hourly_o3_20200520.nc"),
             shape=shape,
             crs=crs,

@@ -28,9 +28,9 @@ class DataSubset:
 
     def __init__(
         self,
-        id,
-        name,
         files,
+        id=None,
+        name=None,
         category=None,
         parameter=None,
         start_time=None,
