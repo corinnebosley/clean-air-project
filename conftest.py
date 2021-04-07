@@ -2,7 +2,6 @@
 Configuration for pytest - this file is automatically executed on startup.
 """
 
-import os
 import pathlib
 
 import pytest
@@ -16,6 +15,7 @@ def pytest_addoption(parser):
     root = pathlib.Path(__file__).parent
     default = root.parent / "cap-sample-data"
     parser.addoption("--sampledir", default=default)
+
 
 @pytest.fixture(scope="package")
 def sampledir(pytestconfig):

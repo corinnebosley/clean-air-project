@@ -3,7 +3,7 @@ import os
 import pytest
 import numpy as np
 import iris
-import shapely, shapely.geometry
+import shapely.geometry
 import cartopy.crs as ccrs
 
 from clean_air.data import DataSubset
@@ -115,7 +115,11 @@ class TestPolygonSubset:
 
         # Create example dataset
         ds = DataSubset(
-            os.path.join(sampledir, "model_full", "aqum_hourly_o3_20200520.nc"),
+            os.path.join(
+                sampledir,
+                "model_full",
+                "aqum_hourly_o3_20200520.nc"
+            ),
             shape=shape,
             crs=crs,
         )

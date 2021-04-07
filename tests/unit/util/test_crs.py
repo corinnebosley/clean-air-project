@@ -51,6 +51,7 @@ cases = [
     ),
 ]
 
+
 @pytest.mark.parametrize("source, target", cases)
 def test_as_cartopy(source, target):
     converted = util.crs.as_cartopy_crs(source)
@@ -58,6 +59,7 @@ def test_as_cartopy(source, target):
     # fail due to differences such as the order of parameters, or whether a
     # number ends with ".0" or not.  Instead, compare the underlying dicts.
     assert converted.proj4_params == target.proj4_params
+
 
 # Note that we can reuse the same cases, but labeled the other way round
 @pytest.mark.parametrize("target, source", cases)

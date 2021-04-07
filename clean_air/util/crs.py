@@ -226,9 +226,11 @@ def _transformer_cartopy(source, target):
 
     return transform
 
+
 def _transformer_pyproj(source, target):
     transformer = pyproj.Transformer.from_crs(source, target, always_xy=True)
     return transformer.transform
+
 
 def transform_shape(shape, source, target):
     # Determine an appropriate transformation function based on type

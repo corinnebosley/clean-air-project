@@ -16,4 +16,3 @@ class Plot:
         # NOTE: Must have a a deployed Bokeh Server app or a deployed Panel
         # app to be able to view these plots.
         self.df.hvplot.line(datashade=True)
-

@@ -36,14 +36,13 @@ class DatasetRenderer:
         Analyses the dimensionality of the dataset and then sends to
         appropriate renderer in test_render_plot.py or test_render_map.py.
         """
+        coords = (self.x_coord, self.y_coord, self.z_coord, self.t_coord)
+
         # If we have both an x-coord and y-coord then we can draw a map:
         if self.x_coord is not None and self.y_coord is not None:
             self.img_type = 'map'
             self.dataframe = geopandas.read_file(self.path)
-            render_map.Map(self.dataframe).render(self.x_coord,
-                                                  self.y_coord,
-                                                  self.z_coord,
-                                                  self.t_coord)
+            render_map.Map(self.dataframe).render(*coords)
         # If we have just a time coord then we can make a timeseries:
         elif self.x_coord is None and self.y_coord is None:
             self.img_type = 'timeseries'
@@ -51,11 +50,7 @@ class DatasetRenderer:
             render_plot.Plot(self.dataframe).render_timeseries()
         # If we don't have any coords then something's gone wrong and we can't
         # plot anything:
-        elif (self.x_coord and self.y_coord and self.z_coord and self.t_coord) \
-                is None:
+        elif all(coord is None for coord in coords):
             raise ValueError('All dimension coordinates are either missing or '
                              'scalar, please choose a dataset with more '
                              'coordinate points.')
-
-
-

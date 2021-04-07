@@ -4,7 +4,8 @@ Objects representing data subsets
 
 import numpy as np
 import iris
-import shapely.geometry, shapely.ops
+import shapely.geometry
+import shapely.ops
 
 from clean_air import util
 

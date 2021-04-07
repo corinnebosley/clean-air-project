@@ -21,10 +21,12 @@ def multidim_cube(sampledir):
     path = os.path.join(sampledir, "model", "aqum_hourly_so2.nc")
     return iris.load_cube(path)
 
+
 @pytest.fixture(scope="class")
 def doubledim_cube(sampledir):
     path = os.path.join(sampledir, "model", "aqum_daily_daqi_mean.nc")
     return iris.load_cube(path)
+
 
 @pytest.fixture(scope="class")
 def onedim_cube(sampledir):

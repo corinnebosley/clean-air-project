@@ -5,8 +5,8 @@ Unit tests for test_dataset_renderer.py
 import os
 
 import pytest
-import geopandas
-import xarray
+# import geopandas
+# import xarray
 
 import clean_air.visualise.dataset_renderer as dr
 
