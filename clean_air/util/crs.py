@@ -215,38 +215,101 @@ def as_cartopy_crs(crs):
     return constructor(**crs_params, globe=ccrs.Globe(**globe_params))
 
 
-def _transformer_cartopy(source, target):
-    def transform(xs, ys):
-        tfpoints = target.transform_points(source, np.array(xs), np.array(ys))
-        # Cartopy gave us an array of shape (n, 3), but shapely expects output
-        # of the same type as the input, ie two lists of length n.
-        # A numpy array of shape (2, n) counts as two lists, so just need to
-        # drop the z coordinates and transpose.
-        return tfpoints[:, 0:2].T
+def match_crs_type(crs, like):
+    """
+    Convert CRSs to either a cartopy or pyproj type.
 
-    return transform
+    Arguments:
+        crs (cartopy.CRS|pyproj.CRS): CRS in a potentially unwanted type
+        like (cartopy.CRS|pyproj.CRS): CRS of the desired type
+
+    Returns:
+        (cartopy.CRS|pyproj.CRS): a CRS equivalent to `crs`, of the same
+            type as `like`
+    """
+    if isinstance(like, ccrs.CRS):
+        return as_cartopy_crs(crs)
+
+    if isinstance(like, pyproj.CRS):
+        return as_pyproj_crs(crs)
+
+    raise TypeError(f"Unrecognised CRS: {like}")
 
 
-def _transformer_pyproj(source, target):
-    transformer = pyproj.Transformer.from_crs(source, target, always_xy=True)
-    return transformer.transform
+def _get_transformer(source, target):
+    # Assumes that source and target have the same type - caller should
+    # have arranged this.
+
+    if isinstance(target, ccrs.CRS):
+        def transform(xs, ys, zs=None):
+            xs = np.array(xs)
+            ys = np.array(ys)
+            if zs is not None:
+                zs = np.array(zs)
+            tfpoints = target.transform_points(source, xs, ys, zs)
+
+            # Cartopy gave us an array of shape (n, 3), but shapely expects
+            # output of the same type as the input, ie two (or three) lists
+            # of length n.
+            # A numpy array of shape (m, n) can be unpacked into m lists of
+            # length n, so just need to transpose, and possibly drop the z
+            # coordinates.
+            if zs is None:
+                tfpoints = tfpoints[:, 0:2]
+            return tfpoints.T
+
+        return transform
+
+    if isinstance(target, pyproj.CRS):
+        # Note: `always_xy` has nothing to do with 2d vs 3d - it ensures that
+        # the first coordinate of the output are the xs, and the second the ys.
+        # Without this, it's whichever order they appear in the target CRS
+        # definition
+        transformer = pyproj.Transformer.from_crs(source, target, always_xy=True)
+        return transformer.transform
+
+    raise TypeError(f"Unrecognised CRS: {target}")
 
 
 def transform_shape(shape, source, target):
+    """
+    Convert a shapely geometry from one CRS to another.
+
+    Arguments:
+        shape (shapely.BaseGeometry): geometry to transform
+        source (cartopy.CRS|pyproj.CRS): CRS that the shape is currently
+            defined for
+        target (cartopy.CRS|pyproj.CRS): desired CRS
+
+    Returns:
+        (shapely.BaseGeometry): transformed shape
+    """
     # Determine an appropriate transformation function based on type
     # If the CRSs are not compatible types, assume it is slightly more helpful
     # to match the target, so convert the source
-    if isinstance(source, ccrs.CRS):
-        if isinstance(target, ccrs.CRS):
-            transformer = _transformer_cartopy(source, target)
-        else:
-            source = as_pyproj_crs(source)
-            transformer = _transformer_pyproj(source, target)
-    else:
-        if isinstance(target, ccrs.CRS):
-            source = as_cartopy_crs(source)
-            transformer = _transformer_cartopy(source, target)
-        else:
-            transformer = _transformer_pyproj(source, target)
+    source = match_crs_type(source, target)
+    transformer = _get_transformer(source, target)
 
     return shapely.ops.transform(transformer, shape)
+
+
+def transform_points(xs, ys, source, target):
+    """
+    Convert coordinates from one CRS to another.
+
+    Arguments:
+        xs (array): list of x coordinates. Can be any sequence accepted by
+            `np.array`.
+        ys (array): list of corresponding y coordinates
+        source (cartopy.CRS|pyproj.CRS): CRS that the coordinates are currently
+            defined for
+        target (cartopy.CRS|pyproj.CRS): desired CRS
+
+    Returns:
+        (xs, ys): transformed points
+    """
+    # Determine an appropriate transformation function based on type
+    source = match_crs_type(source, target)
+    transform = _get_transformer(source, target)
+
+    return transform(np.array(xs), np.array(ys))
