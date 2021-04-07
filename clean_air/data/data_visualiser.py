@@ -1,11 +1,11 @@
-##Data Visuliser Class to handle rendering of maps and plots##
+"""
+Data Visuliser Class to handle rendering of maps and plots
+"""
 
-from .data_visuliser_interface import DataVisuliserInterface
 
-
-class DataVisuliser(DataVisuliserInterface):
+class DataVisuliser():
     def __init__(self, *datasets):
-        self.datasets = datasets #declare variable to hold a list of datasets
+        self.datasets = datasets  # declare variable to hold a list of datasets
 
     def render_obs(self):
         # do Something
