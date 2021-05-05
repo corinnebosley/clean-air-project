@@ -33,13 +33,15 @@ POINTS_LATLON = [
 
 class TestPointSubset:
     @staticmethod
-    def test_as_cube(sampledir):
-        # Create example dataset
-        ds = DataSubset(
-            os.path.join(sampledir, "model_full", "aqum_daily*"),
-            point=(100, 200),
+    @pytest.fixture
+    def dataset(sampledir):
+        return DataSubset(
+            {"files": os.path.join(sampledir, "model_full", "aqum_daily*")}
         )
-        cube = ds.as_cube()
+
+    @staticmethod
+    def test_as_cube(dataset):
+        cube = dataset.extract_point((100, 200))
 
         # Check we have the point we asked for
         xcoord, ycoord = util.cubes.get_xy_coords(cube)
@@ -47,14 +49,8 @@ class TestPointSubset:
         assert iris.util.array_equal(ycoord.points, [200])
 
     @staticmethod
-    def test_as_cube_latlon(sampledir):
-        # Create example dataset
-        ds = DataSubset(
-            os.path.join(sampledir, "model_full", "aqum_daily*"),
-            point=(-0.1, 51.5),
-            crs=ccrs.Geodetic(),
-        )
-        cube = ds.as_cube()
+    def test_as_cube_latlon(dataset):
+        cube = dataset.extract_point((-0.1, 51.5), crs=ccrs.Geodetic())
 
         # Check we have the point we asked for
         xcoord, ycoord = util.cubes.get_xy_coords(cube)
@@ -64,13 +60,15 @@ class TestPointSubset:
 
 class TestBoxSubset:
     @staticmethod
-    def test_as_cube(sampledir):
-        # Create example dataset
-        ds = DataSubset(
-            os.path.join(sampledir, "model_full", "aqum_daily*"),
-            box=(-1000, -2000, 3000, 4000),
+    @pytest.fixture
+    def dataset(sampledir):
+        return DataSubset(
+            {"files": os.path.join(sampledir, "model_full", "aqum_daily*")}
         )
-        cube = ds.as_cube()
+
+    @staticmethod
+    def test_as_cube(dataset):
+        cube = dataset.extract_box((-1000, -2000, 3000, 4000))
 
         # Check we have the points we asked for (multiples of 2000m within
         # each range)
@@ -79,14 +77,8 @@ class TestBoxSubset:
         assert iris.util.array_equal(ycoord.points, [-2000, 0, 2000, 4000])
 
     @staticmethod
-    def test_as_cube_latlon(sampledir):
-        # Create example dataset
-        ds = DataSubset(
-            os.path.join(sampledir, "model_full", "aqum_daily*"),
-            box=(-4, 50.4, -2.8, 51.2),
-            crs=ccrs.Geodetic(),
-        )
-        cube = ds.as_cube()
+    def test_as_cube_latlon(dataset):
+        cube = dataset.extract_box((-4, 50.4, -2.8, 51.2), crs=ccrs.Geodetic())
 
         # Check we have the points we asked for (multiples of 2000m within
         # each range)
@@ -105,25 +97,24 @@ class TestBoxSubset:
 
 class TestPolygonSubset:
     @staticmethod
+    @pytest.fixture
+    def dataset(sampledir):
+        path = os.path.join(
+            sampledir,
+            "model_full",
+            "aqum_hourly_o3_20200520.nc"
+        )
+        return DataSubset({"files": path})
+
+    @staticmethod
     @pytest.mark.parametrize(
         "crs, points",
         [(None, POINTS_OSGB), (ccrs.Geodetic(), POINTS_LATLON)],
     )
-    def test_as_cube(sampledir, crs, points):
-        # Define a test polygon
+    def test_as_cube(dataset, crs, points):
+        # Extract the test polygon
         shape = shapely.geometry.Polygon(points)
-
-        # Create example dataset
-        ds = DataSubset(
-            os.path.join(
-                sampledir,
-                "model_full",
-                "aqum_hourly_o3_20200520.nc"
-            ),
-            shape=shape,
-            crs=crs,
-        )
-        cube = ds.as_cube()
+        cube = dataset.extract_shape(shape, crs=crs)
 
         # Check we have the right mask (on a 2d slice of this 3d cube)
         # Note: this "looks" upside down compared to how it would be plotted

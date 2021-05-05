@@ -11,35 +11,20 @@ from clean_air import util
 
 
 class DataSubset:
-    def __new__(cls, *args, **kw):
-        """
-        Intercept creation of a DataSubset object, and defer to a more
-        specific type if possible.
-        """
-        if cls is DataSubset:
-            if "point" in kw:
-                return PointSubset(*args, **kw)
-            if "box" in kw:
-                return BoxSubset(*args, **kw)
-            if "track" in kw:
-                return TrackSubset(*args, **kw)
-            if "shape" in kw:
-                return ShapeSubset(*args, **kw)
-        return super().__new__(cls)
+    """
+    Represents a subset of a dataset, for example according to variable
+    or time. Areas can be extracted with dedicated methods.
+    """
 
     def __init__(
         self,
-        files,
-        id=None,
-        name=None,
+        metadata,
         category=None,
         parameter=None,
         start_time=None,
         end_time=None,
     ):
-        self.id = id
-        self.name = name
-        self.files = files
+        self.metadata = metadata
         self.category = category
         self.parameter = parameter
         self.start_time = start_time
@@ -47,8 +32,8 @@ class DataSubset:
 
         self._cube = None
 
-    def as_cube(self):
-        if self._cube is not None:
+    def _load_cube(self, force=False):
+        if not force and self._cube is not None:
             return self._cube
 
         constraints = None
@@ -63,36 +48,28 @@ class DataSubset:
                 time=lambda cell: cell.point < self.end_time
             )
 
-        cube = iris.load_cube(self.files, constraints)
+        cube = iris.load_cube(self.metadata["files"], constraints)
 
         self._cube = cube
         return self._cube
 
+    def extract_point(self, point, crs=None):
+        """
+        Extract a rectangular area of gridded data.
 
-class PointSubset(DataSubset):
-    """
-    A dataset with 0 spacial dimensions - a single point.
-    """
+        Arguments:
+            point: point in the form (x, y)
+            crs: coordinate reference system for the point. Same as the
+                dataset by default.
+        """
+        point = shapely.geometry.Point(point)
 
-    def __init__(self, *args, point, crs=None, **kw):
-        super().__init__(*args, **kw)
-        self.point = tuple(point)
-
-        # TODO: consider whether to continue treating None as "same as data",
-        # or whether to insist a CRS is provided
-        self.crs = crs
-
-    def as_cube(self):
-        if self._cube is not None:
-            return self._cube
-
-        cube = super().as_cube()
+        cube = self._load_cube()
 
         # Ensure coordinate systems match
-        crs = cube.coord_system().as_cartopy_crs()
-        point = shapely.geometry.Point(self.point)
-        if self.crs is not None:
-            point = util.crs.transform_shape(point, self.crs, crs)
+        if crs is not None:
+            data_crs = cube.coord_system().as_cartopy_crs()
+            point = util.crs.transform_shape(point, crs, data_crs)
 
         # Interpolate data to the requested point
         try:
@@ -108,76 +85,56 @@ class PointSubset(DataSubset):
             # stored as attributes instead of coords
             pass
 
-        self._cube = cube
-        return self._cube
+        return cube
 
+    def extract_box(self, box, crs=None):
+        """
+        Extract a rectangular area of gridded data.
 
-class BoxSubset(DataSubset):
-    """
-    A dataset limited to an axis-aligned box.
-    """
+        Arguments:
+            box: extent in the form (xmin, ymin, xmax, ymax)
+            crs: coordinate reference system of the box. Same as the
+                dataset by default.
+        """
+        box = shapely.geometry.box(*box)
 
-    def __init__(self, *args, box, crs=None, **kw):
-        super().__init__(*args, **kw)
-        self.box = tuple(box)
-
-        # TODO: consider whether to continue treating None as "same as data",
-        # or whether to insist a CRS is provided
-        self.crs = crs
-
-    def as_cube(self):
-        if self._cube is not None:
-            return self._cube
-
-        cube = super().as_cube()
+        cube = self._load_cube()
 
         # Ensure coordinate systems match
-        crs = cube.coord_system().as_cartopy_crs()
-        box = shapely.geometry.box(*self.box)
-        if self.crs is not None:
-            box = util.crs.transform_shape(box, self.crs, crs)
+        if crs is not None:
+            data_crs = cube.coord_system().as_cartopy_crs()
+            box = util.crs.transform_shape(box, crs, data_crs)
 
         cube = util.cubes.extract_box(cube, box.bounds)
 
-        self._cube = cube
-        return self._cube
+        return cube
 
+    def extract_track(self, track, crs=None):
+        """
+        Extract a track
 
-class TrackSubset(DataSubset):
-    """
-    A dataset along a (possibly curved) line.
-    """
+        Arguments:
+            track: timeseries of the track, as a dataframe
+        """
+        cube = self._load_cube()
 
-    def __init__(self, *args, track, crs=None, **kw):
-        super().__init__(*args, **kw)
-        self.track = track
-        self.crs = crs
+        return util.cubes.extract_series(cube, track)
 
+    def extract_shape(self, shape, crs=None):
+        """
+        Extract an arbitrary area
 
-class ShapeSubset(DataSubset):
-    """
-    A dataset cut down to an arbitrary polygonal area.
-    """
-
-    def __init__(self, *args, shape, crs=None, **kw):
-        super().__init__(*args, **kw)
-        self.shape = shape
-
-        # TODO: consider whether to continue treating None as "same as data",
-        # or whether to insist a CRS is provided
-        self.crs = crs
-
-    def as_cube(self):
-        if self._cube is not None:
-            return self._cube
-
-        cube = super().as_cube()
+        Arguments:
+            shape: shape to extract, as a shapely polygon (or multipolygon)
+            crs: coordinate reference system used by the polygon. Same as
+                the dataset by default.
+        """
+        cube = self._load_cube()
 
         # Ensure coordinate systems match
-        crs = cube.coord_system().as_cartopy_crs()
-        shape = self.shape
-        if self.crs is not None:
-            shape = util.crs.transform_shape(shape, self.crs, crs)
+        if crs is not None:
+            data_crs = cube.coord_system().as_cartopy_crs()
+            shape = util.crs.transform_shape(shape, crs, data_crs)
 
         # The cells must have bounds for shape intersections to have much
         # meaning, especially for shapes that are small compared to the
@@ -200,5 +157,4 @@ class ShapeSubset(DataSubset):
         data = np.ma.array(cube.data, mask=mask)
         cube = cube.copy(data=data)
 
-        self._cube = cube
-        return self._cube
+        return cube
