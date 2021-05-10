@@ -2,6 +2,9 @@
 __pycache__
 *.pyc
 
+# Python package info
+*.egg-info
+
 # Protect against temporary/user-specific artefacts
 .idea
 venv
