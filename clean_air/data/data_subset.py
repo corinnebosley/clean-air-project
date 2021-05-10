@@ -158,3 +158,18 @@ class DataSubset:
         cube = cube.copy(data=data)
 
         return cube
+
+    def extract_shapes(self, shapes, crs=None):
+        """
+        Arguments:
+            shapes: iterable of shapely geometries. For example the
+                ``geometry`` column of a ``GeoDataFrame``.
+            crs: coordinate reference system of the shapes. Same as the
+                dataset by default.
+        """
+        crs = crs or getattr(shapes, "crs", None)
+        cubes = iris.cube.CubeList()
+        for geom in shapes:
+            cubes.append(self.extract_shape(geom, crs=crs))
+
+        return cubes
