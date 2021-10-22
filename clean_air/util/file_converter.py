@@ -1,7 +1,7 @@
 """
 This converts input metadata files to selected file types for processing,
 for example:
-convert_excel(filepath, output_location, filetype)
+convert_excel(filepath, output_location)
 convert_netcdf(filepath, output_location)
 
 You can also use this module to access a pandas.DataFrame extracted from

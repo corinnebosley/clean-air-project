@@ -44,14 +44,13 @@ def csv_filename(tmp_output_path):
     return csv_fname
 
 
-def test_convert_excel_to_json(xl_input_path, tmp_output_path,
-                               json_filename):
+def test_convert_excel_to_json(xl_input_path, json_filename):
     """
     Test to check end-to-end processing of excel metadata form responses and
     their conversion to reformatted json files.
     """
     # Run conversion and check for file in tmp_path:
-    fc.convert_excel(xl_input_path, tmp_output_path, 'json')
+    fc.convert_excel(xl_input_path, json_filename)
     try:
         with open(json_filename) as file:
             file.read()
@@ -59,14 +58,13 @@ def test_convert_excel_to_json(xl_input_path, tmp_output_path,
         raise fnf_error
 
 
-def test_convert_excel_to_yaml(xl_input_path, tmp_output_path,
-                               yaml_filename):
+def test_convert_excel_to_yaml(xl_input_path, yaml_filename):
     """
     Test to check end-to-end processing of excel metadata form responses and
     their conversion to reformatted json files.
     """
     # Run conversion and check for file in tmp_path:
-    fc.convert_excel(xl_input_path, tmp_output_path, 'yaml')
+    fc.convert_excel(xl_input_path, yaml_filename)
     try:
         with open(yaml_filename) as file:
             file.read()
@@ -74,10 +72,10 @@ def test_convert_excel_to_yaml(xl_input_path, tmp_output_path,
         raise fnf_error
 
 
-def test_convert_netcdf_to_csv(netcdf_input_path, tmp_output_path,
-                               csv_filename):
-    output_loc = os.path.join(tmp_output_path, csv_filename)
-    fc.convert_netcdf(netcdf_input_path, output_loc)
+def test_convert_netcdf_to_csv(netcdf_input_path, csv_filename):
+    """Test to check end-to-end processing of netcdf files and their
+    conversion into csv files."""
+    fc.convert_netcdf(netcdf_input_path, csv_filename)
     try:
         with open(csv_filename) as file:
             file.read()
