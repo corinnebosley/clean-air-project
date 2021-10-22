@@ -172,20 +172,23 @@ def save_as_csv(data_object, output_location):
     data_object.to_csv(output_location, index=False)
 
 
-def convert_excel(filepath, output_location, filetype):
+def convert_excel(filepath, output_location):
     """
-    Convert excel metadata files to required output format.  Filetype must be
+    Convert excel metadata files to required output format.  Filename must be
+    included in the output_location parameter with a valid file extension of
     either 'json', 'yml' or 'yaml'.
     """
     temp_dataframe = generate_dataframe(filepath)
     sliced_dataframes = slice_data(temp_dataframe)
+    output_dir = os.path.split(output_location)[0]
+    filetype = os.path.splitext(output_location)[1]
     for df in sliced_dataframes:
-        if filetype == 'json':
+        if filetype == '.json':
             save_as_json(data_object=df[0], r=df[1],
-                         output_location=output_location)
-        elif filetype == 'yaml' or filetype == 'yml':
+                         output_location=output_dir)
+        elif filetype == '.yaml' or filetype == '.yml':
             save_as_yaml(data_object=df[0], r=df[1],
-                         output_location=output_location)
+                         output_location=output_dir)
         else:
             raise ValueError("Filetype not recognized.  Please specify output "
                              "type as either 'json', 'yml' or 'yaml'.")

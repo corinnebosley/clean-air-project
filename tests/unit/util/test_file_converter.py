@@ -42,7 +42,7 @@ def tmp_output_path(tmp_path):
 @pytest.fixture()
 def saved_json(excel_filepath, tmp_output_path):
     json_fname = tmp_output_path / "form_response0.json"
-    fc.convert_excel(excel_filepath, tmp_output_path, 'json')
+    fc.convert_excel(excel_filepath, json_fname)
     saved_json = json.load(json_fname.open())
     return saved_json
 
@@ -50,7 +50,7 @@ def saved_json(excel_filepath, tmp_output_path):
 @pytest.fixture()
 def saved_yaml(excel_filepath, tmp_output_path):
     yaml_fname = tmp_output_path / "form_response0.yaml"
-    fc.convert_excel(excel_filepath, tmp_output_path, 'yaml')
+    fc.convert_excel(excel_filepath, yaml_fname)
     saved_yaml = yaml.safe_load(yaml_fname.open())
     return saved_yaml
 
@@ -170,11 +170,11 @@ def test_yaml_datetime_format(saved_yaml):
     assert dt.datetime.fromisoformat(saved_yaml["time range"]["end"])
 
 
-def test_bad_output_type(excel_filepath, tmp_output_path):
+def test_bad_output_type(excel_filepath, csv_filepath):
     """Test that an exception is raised when an invalid filetype is
     specified (or not specified at all)."""
     with pytest.raises(ValueError):
-        fc.convert_excel(excel_filepath, tmp_output_path, 'none')
+        fc.convert_excel(excel_filepath, csv_filepath)
 
 
 def test_csv_no_index(tmp_output_path, netcdf_filepath):
