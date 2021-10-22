@@ -6,7 +6,7 @@ convert_netcdf(filepath, output_location)
 
 You can also use this module to access a pandas.DataFrame extracted from
 either an excel or netcdf input file, for example:
-read_input_data(filepath)
+generate_dataframe(filepath)
 """
 
 import os
@@ -26,7 +26,7 @@ class DateTimeEncoder(JSONEncoder):
             return obj.isoformat()
 
 
-def read_input_data(filepath):
+def generate_dataframe(filepath):
     """
     Reads in data from excel spreadsheets and holds as temporary
     pandas.DataFrame object.
@@ -39,7 +39,7 @@ def read_input_data(filepath):
         temp_dataset = xr.open_dataset(filepath)
         temp_dataframe = temp_dataset.to_dataframe()
     else:
-        raise Exception("No reader configured yet for this input format.")
+        raise ValueError("No reader configured yet for this input format.")
     return pd.DataFrame(temp_dataframe)
 
 
@@ -175,20 +175,20 @@ def save_as_csv(data_object, output_location):
 def convert_excel(filepath, output_location, filetype):
     """
     Convert excel metadata files to required output format.  Filetype must be
-    either 'json' or 'yaml'.
+    either 'json', 'yml' or 'yaml'.
     """
-    temp_dataframe = read_input_data(filepath)
+    temp_dataframe = generate_dataframe(filepath)
     sliced_dataframes = slice_data(temp_dataframe)
     for df in sliced_dataframes:
-        if filetype is 'json':
+        if filetype == 'json':
             save_as_json(data_object=df[0], r=df[1],
                          output_location=output_location)
-        elif filetype is 'yaml':
+        elif filetype == 'yaml' or filetype == 'yml':
             save_as_yaml(data_object=df[0], r=df[1],
                          output_location=output_location)
         else:
-            raise Exception("Filetype not recognized.  Please specify output "
-                            "type as either 'json' or 'yaml'.")
+            raise ValueError("Filetype not recognized.  Please specify output "
+                             "type as either 'json', 'yml' or 'yaml'.")
 
 
 def convert_netcdf(filepath, output_location):
@@ -196,6 +196,6 @@ def convert_netcdf(filepath, output_location):
     Convert netcdf files to required csv output format.  Output filename must
     be included in output location.
     """
-    temp_dataframe = read_input_data(filepath)
+    temp_dataframe = generate_dataframe(filepath)
     save_as_csv(temp_dataframe, output_location)
 
