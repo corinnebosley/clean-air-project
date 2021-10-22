@@ -23,3 +23,4 @@ dependencies:
   # Dev
   - pytest
   - flake8
+  - pip
